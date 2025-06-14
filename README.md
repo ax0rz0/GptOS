@@ -5,40 +5,41 @@ Bootable on QEMU, VirtualBox, or real hardware (USB stick, old PC).
 
 ## Features
 - Bootloader, 32-bit C kernel
-- Real keyboard typing (backspace, enter, echo)
-- Built-in CLI: calculator, multi-note, echo, static clock, fun facts
-- Clear, documented source; easy to extend
+- Real keyboard typing
+- Simple RAM file system (create/delete/copy/read files)
+- Built-in CLI: calculator, notes, echo, file manager
+- Third-party app support (`.prg` format, see `apps/thirdparty/`)
+- File API available to third-party apps!
 
-## Quick Start (on Linux)
+## CLI File Commands
+- `ls`           — list all files
+- `cat <file>`   — view file content
+- `new <file>`   — create/edit a file (multi-line, finish with '~' on a line)
+- `del <file>`   — delete a file
+- `cp <a> <b>`   — copy file a → b
 
-1. **Install tools:**  
-   `sudo apt install gcc nasm qemu-system-x86`
+## File API for .prg Apps
+See `api.h`:
+- `file_create(filename, text)` — create/write
+- `file_read(filename, buf, max)` — read to buf, returns bytes read
+- `file_delete(filename)`
+- `file_list(array, max)` — fills up to max filenames in array
 
-2. **Build & run in QEMU:**  
-   ```
-   make
-   make run
-   ```
+**Example (see `apps/thirdparty/savehello.c`):**
+```c
+#include "../../api.h"
+void main(struct API *api) {
+    api->file_create("hi.letter", "Hello, Letter!");
+    char buf[256];
+    if (api->file_read("hi.letter", buf, 256) > 0)
+        api->print(buf);
+}
+```
 
-3. **Burn to USB (be careful!):**
-   ```
-   sudo dd if=gptos.img of=/dev/sdX bs=512 seek=0
-   # Replace /dev/sdX with your USB device
-   ```
+## Build & Run (Linux/macOS/Windows)
+See previous instructions. Use QEMU, MSYS2, or Homebrew toolchains as before.
 
-4. **Boot on real hardware:**  
-   - Plug USB in, boot from USB in BIOS.
+## Contributing
+Add your `.prg` to `apps/thirdparty/`!
 
-## File Overview
-- `bootloader.asm`: Tiny MBR boot sector (loads kernel from 2nd sector)
-- `kernel.c`: Main kernel, shell, core CLI
-- `keyboard.c/h`: Keyboard handler (real typing, backspace)
-- `apps/`: CLI apps (`calc.c`, `notes.c`, `extras.c`)
-- `linker.ld`: Linker script (places kernel at 0x1000)
-- `Makefile`: Full build & run automation
-
-## Extend it!
-Add your own commands and apps in the `apps/` folder, and add function calls in `kernel.c:shell()`.
-
-## Credits
-- Based on OSDev.org patterns and OpenAI’s ChatGPT
+---
